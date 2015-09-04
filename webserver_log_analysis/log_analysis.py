@@ -15,7 +15,7 @@ logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=loggin
 LOG = logging.getLogger(__name__)
 
 
-class NginxProfiler(object):
+class LogAnalysis(object):
 
     def __init__(self, options={}):
 
@@ -74,5 +74,5 @@ if __name__ == "__main__":
     access_log = args.log
 
     options = {"access_log": access_log,}
-    nginx = NginxProfiler(options=options)
+    nginx = LogAnalysis(options=options)
     nginx.run()
