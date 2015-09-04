@@ -14,4 +14,7 @@ create a virtualenv
 
 # TODO
 
+   - Top requests (status code > 200 and < 400)
+   - Top errors (status code > 500)
+
 
