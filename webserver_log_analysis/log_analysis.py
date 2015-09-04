@@ -34,7 +34,7 @@ class LogAnalysis(object):
             columns = ['time_local','request_method','request_uri','status','request_time',]
             #df = pd.read_table(self.access_log, names=columns, sep='\s+', dtype={"status": np.int8, "request_time": np.float16})
             df = pd.read_table(self.access_log, names=columns, sep='\s+',)
-            df_200 = df[df['status'] == 200]
+            df_200 = df[df['status'] < 300]
             grouped = df_200.groupby('request_uri')
             for name, group in grouped:
                 desc = group.describe()
