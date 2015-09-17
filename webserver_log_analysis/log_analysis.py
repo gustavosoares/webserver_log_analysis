@@ -44,7 +44,7 @@ class LogAnalysis(object):
         marker = itertools.cycle(('+', '*', 'x', 's', 'D'))
 
         # http://auctionrepair.com/pixels.html
-        fig = plt.figure(figsize=(12,6.85))
+        fig = plt.figure(figsize=(35,6.85))
         plt.title('Resquest time X Request URI')
         ax = fig.add_subplot(1,1,1)
         LOG.info("saving plot...")
@@ -57,6 +57,8 @@ class LogAnalysis(object):
                     color=color.next())
 
         ax.grid(color='k', linestyle='--', linewidth=0.2)
+        ax.xaxis.set_minor_locator(mdates.MinuteLocator(np.arange(0,60,15)))
+        ax.xaxis.set_major_locator(mdates.HourLocator(np.arange(0,25,1)))
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%d/%b/%Y:%H:%M'))
         ax.fmt_xdata = mdates.DateFormatter(self.log_datetime_format)
         ax.legend(white_list, loc='best', fancybox=True, framealpha=0.5)
