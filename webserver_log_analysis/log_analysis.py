@@ -37,6 +37,7 @@ class LogAnalysis(object):
 
         df = data_frame
         white_list = self.uri_white_list
+        LOG.info("uri white list => {0}".format(white_list))
         #df_white_list = df[df['request_uri'].isin(white_list)]
 
         color = itertools.cycle(('b', 'g', 'r', 'c', 'm', 'y', 'k'))
@@ -49,13 +50,14 @@ class LogAnalysis(object):
         LOG.info("saving plot...")
         for uri in white_list:
             df_aux = df[df.request_uri == uri]
-            ax.plot(df_aux['time_local'],
+            ax.plot_date(df_aux['time_local'],
                     df_aux['request_time'],
+                    fmt='b-',
                     marker=marker.next(),
-                    color=color.next(),
-                    label="{0}".format(uri))
+                    color=color.next())
 
         ax.grid(color='k', linestyle='--', linewidth=0.2)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%d/%b/%Y:%H:%M'))
         ax.fmt_xdata = mdates.DateFormatter(self.log_datetime_format)
         ax.legend(white_list, loc='best', fancybox=True, framealpha=0.5)
         ax.set_xlabel('datetime')
