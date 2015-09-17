@@ -60,3 +60,4 @@ target/
 *.bak
 *.preprocessed
 .idea
+*.log.gz
