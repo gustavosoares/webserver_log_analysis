@@ -1,3 +1,5 @@
 pandas==0.16.2
 prettytable==0.7.2
 matplotlib==1.4.3
+statsd==3.1
+influxdb==2.9.2
