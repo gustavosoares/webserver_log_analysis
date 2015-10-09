@@ -13,6 +13,14 @@ logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=loggin
 LOG = logging.getLogger(__name__)
 
 
+def read_value(parser, section=None, key=None):
+    value = None
+    if parser.has_option(section, key):
+        value = parser.get(section, key)
+        return value
+    else:
+        value=None
+        sys.exit("There is no {0} definition in {1} section".format(key, section))
 
 if __name__ == "__main__":
 
@@ -53,7 +61,7 @@ if __name__ == "__main__":
     if send_to_statsd and region:
         config_file = '~/.log_analysis'
         if not os.path.exists(config_file):
-            LOG.warning("config file {0} not found")
+            LOG.warning("config file {0} not found".format(config_file))
             sys.exit(1)
 
         parser.read(os.path.expanduser(config_file))
@@ -83,19 +91,56 @@ if __name__ == "__main__":
         stats_client = statsd.StatsClient(statsHost, statsPort, prefix=statsProject)
 
     if send_to_influxdb and region:
+        # config_file = '~/.log_analysis'
+        # if not os.path.exists(config_file):
+        #     LOG.warning("config file {0} not found".format(config_file))
+        #     sys.exit(1)
+        #
+        # parser.read(os.path.expanduser(config_file))
+        # if parser.has_section(args.region):
+        #
+        #     #influxdb
+        #     if parser.has_option("Influxdb", 'influxdb_host'):
+        #         influxdb_host = parser.get("Influxdb", 'influxdb_host')
+        #     else:
+        #         statsHost=None
+        #         sys.exit("There is no influxdb_host definition in Influxdb section" )
+        #
+        #     if parser.has_option("Influxdb", 'influxdb_port'):
+        #         influxdb_port = parser.get("Influxdb", 'influxdb_port')
+        #     else:
+        #         statsPort=None
+        #         sys.exit("There is no influxdb_port defined in Influxdb section" )
+        #
+        #     if parser.has_option("Influxdb", 'influxdb_user'):
+        #         influxdb_user = parser.get("Influxdb", 'influxdb_user')
+        #     else:
+        #         influxdb_user=None
+        #         sys.exit("There is no influxdb_user definition in Influxdb section" )
+        # else:
+        #     sys.exit("Invalid region: '%s'" % args.region)
+
         influxdb_host = "192.168.99.100"
         influxdb_port = 8086
         influxdb_user = 'root'
         influxdb_password = 'root'
         influxdb_dbname = 'log_analysis'
 
-        influxdb_client = DataFrameClient(influxdb_host,
-                                 influxdb_port,
-                                 influxdb_user,
-                                 influxdb_password,
-                                 influxdb_dbname)
+        influxdb_client = DataFrameClient(host=influxdb_host,
+                                 port=influxdb_port,
+                                 username=influxdb_user,
+                                 password=influxdb_password,
+                                 database=influxdb_dbname)
 
-        influxdb_client.create_database(influxdb_dbname)
+        dbs = influxdb_client.get_list_database()
+        create_db = True
+        for db in dbs:
+            if db['name'] == influxdb_dbname:
+                create_db = False
+                break
+
+        if create_db:
+            influxdb_client.create_database(influxdb_dbname)
 
     options = {"access_log": access_log,
                 "request_time_threshold": request_time_threshold,
