@@ -49,8 +49,12 @@ class LogAnalysis(object):
                 df_aux = df_aux.set_index(['time_local'])
                 uri_list = uri.split('/')
                 table_name = '_'.join([x for x in uri_list if x and x != '#'])
-                LOG.debug("sending data to table {0}".format(table_name))
-                self.influxdb_client.write_points(df_aux, table_name)
+                try:
+                    LOG.debug("sending data to table {0}".format(table_name))
+                    self.influxdb_client.write_points(df_aux, table_name)
+                except Exception, e:
+                    LOG.warning("ops... error to send data to influxdb -> {0}".format(e))
+
 
     def __round(self, number):
         return "%.2f" % number
@@ -128,6 +132,8 @@ class LogAnalysis(object):
 
             if self.influxdb_client:
                 self.__send_to_influxdb(data_frame=df)
+
+
         else:
             print LOG.debug("file [{0}] does not exist".format(self.access_log))
 
