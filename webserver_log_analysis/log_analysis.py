@@ -48,7 +48,7 @@ class LogAnalysis(object):
                 df_aux = df_aux.drop(df_aux.columns[[1, 2, 3]], axis=1)
                 df_aux = df_aux.set_index(['time_local'])
                 uri_list = uri.split('/')
-                table_name = '_'.join([x for x in uri_list if x])
+                table_name = '_'.join([x for x in uri_list if x and x != '#'])
                 LOG.debug("sending data to table {0}".format(table_name))
                 self.influxdb_client.write_points(df_aux, table_name)
 
