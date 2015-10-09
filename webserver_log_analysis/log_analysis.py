@@ -1,5 +1,4 @@
 import logging
-import argparse
 import os
 import itertools
 import matplotlib.pyplot as plt
@@ -9,9 +8,8 @@ from prettytable import PrettyTable
 from colors import Colors
 import numpy as np
 import datetime as dt
-import sys
-from ConfigParser import SafeConfigParser
 
+from influxdb import DataFrameClient
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=logging.DEBUG)
 LOG = logging.getLogger(__name__)
@@ -31,25 +29,27 @@ class LogAnalysis(object):
         self.table = PrettyTable(self.table_columns)
         #statsd
         self.stats_client = options.get("stats_client", None)
+        self.influxdb_client = options.get("influxdb_client", None)
 
-    def __send_to_statsd(self, data_frame=None):
+    def __send_to_influxdb(self, data_frame=None):
         """
         key should be a string delimited by point
         eg: a.b.c
 
         to send data to statsd: self.stats_client.incr(key, value)
         """
-        if self.stats_client and data_frame:
+        LOG.debug("sending dataframe to influxdb")
+        if self.influxdb_client and data_frame:
             df = data_frame
             white_list = self.uri_white_list
             LOG.info("uri white list => {0}".format(white_list))
             for uri in white_list:
                 df_aux = df[df.request_uri == uri]
-                # ax.plot_date(df_aux['time_local'],
-                #         df_aux['request_time'],
-                #         fmt='b-',
-                #         marker=marker.next(),
-                #         color=color.next())
+                df_aux = df_aux.drop(df_aux.columns[[1, 2, 3]], axis=1)
+                uri_list = uri.split('/')
+                table_name = '_'.join([x for x in uri_list if x])
+                LOG.debug("sending data to table {0}".table_name)
+                self.influxdb_client.write_points(df_aux, table_name)
 
     def __round(self, number):
         return "%.2f" % number
@@ -124,83 +124,10 @@ class LogAnalysis(object):
 
             if self.stats_client:
                 self.__send_to_statsd(data_frame=df)
+
+            if self.influxdb_client:
+                self.__send_to_influxdb(data_frame=df)
         else:
             print LOG.debug("file [{0}] does not exist".format(self.access_log))
 
         print self.table.get_string()
-
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description='Nginx profiler')
-    parser.add_argument('--log', type=str, default='',
-                        help='Logfile')
-    parser.add_argument('--request_time_threshold', type=int, default=10,
-                        help='Threshold to color the row red')
-    parser.add_argument('--plot_chart', type=bool, default=False,
-                        help='Plot chart request time x request uri')
-    parser.add_argument('--statsd', type=bool, default=False,
-                        help='Send data to statsd. Need to specify the region too.')
-    parser.add_argument('--log_datetime_format', type=str, default='%d/%b/%Y:%H:%M:%S',
-                        help='date time log format. see python datetime for options.')
-    parser.add_argument('--uri_white_list', type=str, default='',
-                        help='uri white list coma delimited. Ex.: /a/,/b/,/test/')
-    parser.add_argument('--region', type=str, default='', required=False,
-                    help='statsd region')
-
-    args = parser.parse_args()
-
-    parser = SafeConfigParser()
-
-    access_log = args.log
-    request_time_threshold = args.request_time_threshold
-    log_datetime_format = args.log_datetime_format
-    plot_chart = args.plot_chart
-    statsd = args.statsd
-    uri_white_list = args.uri_white_list
-    uri_white_list = uri_white_list.split(',')
-    region = args.region
-
-    stats_client = None
-    if statsd and region:
-        config_file = '~/.log_analysis'
-        if not os.path.exists(config_file):
-            LOG.warning("config file {0} not found")
-            sys.exit(1)
-
-        parser.read(os.path.expanduser(config_file))
-        if parser.has_section(args.region):
-
-         #Statsd
-            if parser.has_option("Statsd", 'statshost'):
-                statsHost = parser.get("Statsd", 'statshost')
-            else:
-                statsHost=None
-                sys.exit("There is no statshost definition in Statsd section" )
-
-            if parser.has_option("Statsd", 'statsPort'):
-                statsPort = parser.get("Statsd", 'statsPort')
-            else:
-                statsPort=None
-                sys.exit("There is no statsPort defined in Statsd section" )
-
-            if parser.has_option("Statsd", 'statsProject'):
-                statsProject = parser.get("Statsd", 'statsProject')
-            else:
-                statsProject=None
-                sys.exit("There is no statsProject definition in Statsd section" )
-        else:
-            sys.exit("Invalid region: '%s'" % args.region)
-
-    stats_client = statsd.StatsClient(statsHost, statsPort, prefix=statsProject)
-
-    options = {"access_log": access_log,
-                "request_time_threshold": request_time_threshold,
-               "log_datetime_format": log_datetime_format,
-               "plot_chart": plot_chart,
-               "uri_white_list": uri_white_list,
-               "statsd": statsd,
-               "stats_client": stats_client,
-               "stats_project": statsProject}
-
-    log_analysis = LogAnalysis(options=options)
-    log_analysis.run()
