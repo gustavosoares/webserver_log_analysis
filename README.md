@@ -17,4 +17,13 @@ create a virtualenv
    - Top requests (status code > 200 and < 400)
    - Top errors (status code > 500)
 
+# Sample config file
 
+
+    [local]
+    
+    influxdb_host = 192.168.99.100
+    influxdb_port = 8086
+    influxdb_user = root
+    influxdb_password = root
+    influxdb_dbname = log_analysis
