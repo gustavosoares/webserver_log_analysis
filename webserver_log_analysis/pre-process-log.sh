@@ -26,6 +26,3 @@ sed -i .bak 's/[a-fA-F0-9]\{8\}-[a-fA-F0-9]\{4\}-4[a-fA-F0-9]\{3\}-[89aAbB][a-fA
 
 #removes line that starts with [
 sed -i .bak '/^\[/d' ${FILENAME}.preprocessed
-
-
-echo "/api/pools/getbypk/14790"
