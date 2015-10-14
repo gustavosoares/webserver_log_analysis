@@ -39,19 +39,22 @@ class LogAnalysis(object):
         to send data to statsd: self.stats_client.incr(key, value)
         """
         LOG.debug("sending dataframe to influxdb")
+        table_name = "nginx_access"
         if self.influxdb_client and data_frame is not None:
             df = data_frame
             white_list = self.uri_white_list
             LOG.info("uri white list => {0}".format(white_list))
             for uri in white_list:
                 df_aux = df[df.request_uri == uri]
-                df_aux = df_aux.drop(df_aux.columns[[1, 2, 3]], axis=1)
+                #df_aux = df_aux.drop(df_aux.columns[[1, 2, 3]], axis=1)
+                df_aux = df_aux.drop(df_aux.columns[[2]], axis=1)
                 df_aux = df_aux.set_index(['time_local'])
                 uri_list = uri.split('/')
-                table_name = '_'.join([x for x in uri_list if x and x != '#'])
+                tag = '_'.join([x for x in uri_list if x and x != '#'])
+
                 try:
                     LOG.debug("sending data to table {0}".format(table_name))
-                    self.influxdb_client.write_points(df_aux, table_name)
+                    self.influxdb_client.write_points(df_aux, table_name, {'request_uri':tag})
                 except Exception, e:
                     LOG.warning("ops... error to send data to influxdb -> {0}".format(e))
 
