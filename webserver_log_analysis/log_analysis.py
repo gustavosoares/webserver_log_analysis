@@ -42,9 +42,10 @@ class LogAnalysis(object):
         table_name = "nginx_access"
         if self.influxdb_client and data_frame is not None:
             df = data_frame
-            white_list = self.uri_white_list
-            LOG.info("uri white list => {0}".format(white_list))
-            for uri in white_list:
+            uris = df['request_uri'].unique()
+            #white_list = self.uri_white_list
+            for uri in uris:
+                LOG.info("filtering uri => {0}".format(uri))
                 df_aux = df[df.request_uri == uri]
                 #df_aux = df_aux.drop(df_aux.columns[[1, 2, 3]], axis=1)
                 df_aux = df_aux.drop(df_aux.columns[[2]], axis=1)
