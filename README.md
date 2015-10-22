@@ -12,6 +12,18 @@ create a virtualenv
     mkvirtualenv webserver-log-analysis
     pip install -r requirements.txt
 
+create a config file in ~/.log_analysis with the following content
+
+    [local]
+    
+    influxdb_host = [IP]
+    influxdb_port = 8086
+    influxdb_user = root
+    influxdb_password = root
+    influxdb_dbname = [DB_NAME]
+    
+replace the values accordingly to the section that you wish to create and also accordingly to your environment
+
 # TODO
 
    - Top requests (status code > 200 and < 400)
