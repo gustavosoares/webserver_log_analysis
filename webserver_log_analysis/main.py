@@ -21,6 +21,40 @@ def read_value(parser, section=None, key=None):
     else:
         sys.exit("There is no {0} definition in section {1}".format(key, section))
 
+
+def read_influxdb_conf():
+    config_file = os.path.expanduser("~/.log_analysis")
+    if not os.path.exists(config_file):
+        LOG.warning("config file {0} not found".format(config_file))
+        sys.exit(1)
+    parser.read(config_file)
+    if parser.has_section(args.region):
+
+        influxdb_host = read_value(parser, section=args.region, key="influxdb_host")
+        influxdb_port = int(read_value(parser, section=args.region, key="influxdb_port"))
+        influxdb_user = read_value(parser, section=args.region, key="influxdb_user")
+        influxdb_password = read_value(parser, section=args.region, key="influxdb_password")
+        influxdb_dbname = read_value(parser, section=args.region, key="influxdb_dbname")
+
+    else:
+        sys.exit("Invalid region: '%s'" % args.region)
+    influxdb_client = DataFrameClient(host=influxdb_host,
+                                      port=influxdb_port,
+                                      username=influxdb_user,
+                                      password=influxdb_password,
+                                      database=influxdb_dbname)
+    dbs = influxdb_client.get_list_database()
+    create_db = True
+    for db in dbs:
+        if db['name'] == influxdb_dbname:
+            create_db = False
+            break
+    if create_db:
+        influxdb_client.create_database(influxdb_dbname)
+
+    return influxdb_client
+
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Nginx profiler')
@@ -30,9 +64,9 @@ if __name__ == "__main__":
                         help='Threshold to color the row red')
     parser.add_argument('--plot_chart', type=bool, default=False,
                         help='Plot chart request time x request uri')
-    parser.add_argument('--send_to_statsd', type=bool, default=False,
+    parser.add_argument('--send_to_statsd', action='store_true', default=False,
                         help='Send data to statsd. Need to specify the region too.')
-    parser.add_argument('--send_to_influxdb', type=bool, default=False,
+    parser.add_argument('--send_to_influxdb', action='store_true', default=False,
                         help='Send data to influxdb. Need to specify the region too.')
     parser.add_argument('--log_datetime_format', type=str, default='%d/%b/%Y:%H:%M:%S',
                         help='date time log format. see python datetime for options.')
@@ -91,47 +125,18 @@ if __name__ == "__main__":
 
     #infuxdb
     if send_to_influxdb and region:
-        config_file = os.path.expanduser("~/.log_analysis")
-        if not os.path.exists(config_file):
-            LOG.warning("config file {0} not found".format(config_file))
-            sys.exit(1)
-
-        parser.read(config_file)
-        if parser.has_section(args.region):
-
-            influxdb_host = read_value(parser, section=args.region, key="influxdb_host")
-            influxdb_port = int(read_value(parser, section=args.region, key="influxdb_port"))
-            influxdb_user = read_value(parser, section=args.region, key="influxdb_user")
-            influxdb_password = read_value(parser, section=args.region, key="influxdb_password")
-            influxdb_dbname = read_value(parser, section=args.region, key="influxdb_dbname")
-
-        else:
-            sys.exit("Invalid region: '%s'" % args.region)
-
-        influxdb_client = DataFrameClient(host=influxdb_host,
-                                 port=influxdb_port,
-                                 username=influxdb_user,
-                                 password=influxdb_password,
-                                 database=influxdb_dbname)
-
-        dbs = influxdb_client.get_list_database()
-        create_db = True
-        for db in dbs:
-            if db['name'] == influxdb_dbname:
-                create_db = False
-                break
-
-        if create_db:
-            influxdb_client.create_database(influxdb_dbname)
+        influxdb_client = read_influxdb_conf()
 
     options = {"access_log": access_log,
-                "request_time_threshold": request_time_threshold,
+               "request_time_threshold": request_time_threshold,
                "log_datetime_format": log_datetime_format,
                "plot_chart": plot_chart,
                "uri_white_list": uri_white_list,
                "statsd": statsd,
                "stats_client": stats_client,
                "influxdb_client": influxdb_client}
+
+    sys.exit(0)
 
     log_analysis = LogAnalysis(options=options)
     log_analysis.run()

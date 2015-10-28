@@ -111,8 +111,6 @@ class LogAnalysis(object):
             df = pd.read_table(self.access_log, parse_dates=[0], date_parser=self.parse_dates, names=columns, sep='\s+')
             #filter invalid method
             df = df[df.request_method != '-']
-            #df = pd.read_table(self.access_log, names=columns, sep='\s+',)
-            grouped_by_minute = df.groupby(df['time_local'].map(lambda x: (x.year, x.month, x.day, x.hour, x.minute)))
             df_200 = df[df['status'] < 300]
             grouped = df_200.groupby('request_uri')
             for name, group in grouped:
