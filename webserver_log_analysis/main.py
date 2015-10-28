@@ -55,6 +55,39 @@ def read_influxdb_conf():
     return influxdb_client
 
 
+def read_statsd_confg():
+
+    config_file = os.path.expanduser("~/.log_analysis")
+    if not os.path.exists(config_file):
+        LOG.warning("config file {0} not found".format(config_file))
+        sys.exit(1)
+    parser.read(config_file)
+    if parser.has_section(args.region):
+
+        # Statsd
+        if parser.has_option("Statsd", 'statshost'):
+            statsHost = parser.get("Statsd", 'statshost')
+        else:
+            statsHost = None
+            sys.exit("There is no statshost definition in Statsd section")
+
+        if parser.has_option("Statsd", 'statsPort'):
+            statsPort = parser.get("Statsd", 'statsPort')
+        else:
+            statsPort = None
+            sys.exit("There is no statsPort defined in Statsd section")
+
+        if parser.has_option("Statsd", 'statsProject'):
+            statsProject = parser.get("Statsd", 'statsProject')
+        else:
+            statsProject = None
+            sys.exit("There is no statsProject definition in Statsd section")
+    else:
+        sys.exit("Invalid region: '%s'" % args.region)
+
+    stats_client = statsd.StatsClient(statsHost, statsPort, prefix=statsProject)
+    return stats_client
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Nginx profiler')
@@ -62,7 +95,7 @@ if __name__ == "__main__":
                         help='Logfile')
     parser.add_argument('--request_time_threshold', type=int, default=10,
                         help='Threshold to color the row red')
-    parser.add_argument('--plot_chart', type=bool, default=False,
+    parser.add_argument('--plot_chart', action='store_true', default=False,
                         help='Plot chart request time x request uri')
     parser.add_argument('--send_to_statsd', action='store_true', default=False,
                         help='Send data to statsd. Need to specify the region too.')
@@ -92,36 +125,7 @@ if __name__ == "__main__":
     stats_client = None
     influxdb_client = None
     if send_to_statsd and region:
-        config_file = os.path.expanduser("~/.log_analysis")
-        if not os.path.exists(config_file):
-            LOG.warning("config file {0} not found".format(config_file))
-            sys.exit(1)
-
-        parser.read(config_file)
-        if parser.has_section(args.region):
-
-            #Statsd
-            if parser.has_option("Statsd", 'statshost'):
-                statsHost = parser.get("Statsd", 'statshost')
-            else:
-                statsHost=None
-                sys.exit("There is no statshost definition in Statsd section" )
-
-            if parser.has_option("Statsd", 'statsPort'):
-                statsPort = parser.get("Statsd", 'statsPort')
-            else:
-                statsPort=None
-                sys.exit("There is no statsPort defined in Statsd section" )
-
-            if parser.has_option("Statsd", 'statsProject'):
-                statsProject = parser.get("Statsd", 'statsProject')
-            else:
-                statsProject=None
-                sys.exit("There is no statsProject definition in Statsd section" )
-        else:
-            sys.exit("Invalid region: '%s'" % args.region)
-
-        stats_client = statsd.StatsClient(statsHost, statsPort, prefix=statsProject)
+        stats_client = read_statsd_confg()
 
     #infuxdb
     if send_to_influxdb and region:
