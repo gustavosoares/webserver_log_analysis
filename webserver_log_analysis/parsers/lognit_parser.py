@@ -1,12 +1,11 @@
 import time
 import re
 import logging
-
-from . import BasicParser
+from webserver_log_analysis.parsers import BasicParser
 
 LOG = logging.getLogger(__name__)
 
-class SampleParser(BasicParser):
+class LognitParser(BasicParser):
 
     def __init__(self):
 
@@ -17,6 +16,8 @@ class SampleParser(BasicParser):
         # discards unecessary columns
         line = " ".join([line.split()[index] for index in self.columns_to_keep])
 
+        return line
+
 if __name__ == "__main__":
 
-    sample_parser = SampleParser()
+    sample_parser = LognitParser()
