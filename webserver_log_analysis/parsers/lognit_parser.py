@@ -24,9 +24,12 @@ class LognitParser(BasicParser):
         self.columns_to_keep = [6,10,11,16,18] # 0 indexed
         self.reg = re.compile('.*HTTP/1.\d\" (?P<http_status_code>\d{3}) .*')
         # patterns is list with tuples, containing the regexp and the replacement string
+        # \/[0-9]{1,9}[^.:]
         self.patterns = [("//","/"),
                          ("[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}", "#"),
-                         ("[0-9]{1,9}[/]", "#"),]
+                         ("/[0-9]{1,9}/", "/#/"),
+                         ("/[0-9]{1,9} ", "/# "),]
+
 
     def parse_line(self, line):
         # discards unecessary columns
